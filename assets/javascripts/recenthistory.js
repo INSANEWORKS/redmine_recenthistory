@@ -63,7 +63,7 @@ function showRecentHistory()
 	if($("sidebar")) {
 		var issueArray = $.cookie("recentIssues");
 
-		$("<div id='recentList'>").prependTo("#sidebar");
+		$("<div id='recentList'>").prependTo("#sidebar-wrapper");
 		var recentList = $("<h3>最近見たチケット</h3>").appendTo("#recentList");
 
 		var issuesShown = 0;
