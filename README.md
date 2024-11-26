@@ -15,3 +15,4 @@ HISTORY
 
 * 0.0.1 Original Ver.
 * 0.0.2 Compatible with Redmine 2.x (prototype.js -> jQuery)
+* 1.0.0 Compatible with Redmine 6.x (cookie -> webstorage)
