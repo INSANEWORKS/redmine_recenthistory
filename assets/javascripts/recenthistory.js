@@ -5,7 +5,8 @@
 
 var issueMatcher = new RegExp(/.*\/issues\/(\d+).*/gi);
 var currentIssue = null;
-var maxIssues = 30;
+var maxIssues = 20;
+var maxIssuesTitle = 35;
 
 Object.size = function(obj) {
     var size = 0, key;
@@ -63,7 +64,7 @@ function showRecentHistory() {
       if (issueArray[i]["ID"] != currentIssue) {
         issuesShown++;
         var disp = issueArray[i]["Str"];
-        if (disp.length > 55) { disp = disp.substring(0, 55) + "..." }
+        if (disp.length > maxIssuesTitle) { disp = disp.substring(0, maxIssuesTitle) + "..." }
         var a = "<a href=/issues/" + issueArray[i]["ID"] + ">" + disp + "</a></br>";
         $("#recentList").append(a);
       }
