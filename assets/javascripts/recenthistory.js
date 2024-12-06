@@ -3,80 +3,77 @@
 /* Modified by Kota Shiratsuka [Compatible with Redmine 6.x] */
 /* https://github.com/INSANEWORKS/redmine_recenthistory */
 
-var issueMatcher = new RegExp(/.*\/issues\/(\d+).*/gi);
-var currentIssue = null;
-var maxIssues = 20;
-var maxIssuesTitle = 35;
-
-Object.size = function(obj) {
-    var size = 0, key;
-  for (key in obj) {
-    if (obj.hasOwnProperty(key)) size++;
-  }
-  return size;
-};
+const issueMatcher = /\/issues\/(\d+)/;
+const maxIssues = 20;
+const maxIssuesTitle = 35;
 
 function trackRecentHistory() {
-  var results = issueMatcher.exec(location.href);
-  if (results == undefined || results == null || results.length < 2 || results[1].length < 1) { return; }
+  const results = location.href.match(issueMatcher);
+  if (!results || results.length < 2) return;
 
-  currentIssue = results[1];
-  var issueTitle = $("#content h2:first").text().replace(/.*(#\d+)/, "$1");
-  var issueSubject = $("#content div.subject h3").text();
+  const currentIssue = results[1];
+  const issueTitle = $("#content h2:first").text().replace(/.*(#\d+)/, "$1");
+  const issueSubject = $("#content div.subject h3").text();
 
-  var issueArray = JSON.parse(localStorage.getItem("recentIssues")) || [];
+  // 現在の履歴を取得
+  let issueArray = JSON.parse(localStorage.getItem("recentIssues")) || [];
 
-  var issueHash = {};
-  issueHash[currentIssue] = 1;
-  var newArray = [];
-  var cidx = 1;
+  // 新しい履歴項目を作成
+  const newEntry = { ID: currentIssue, Str: `${issueTitle}: ${issueSubject}` };
 
-  for (var i = 0; i < Object.size(issueArray); i++) {
-    if (i <= maxIssues) {
-      var entry = issueArray[i];
-      if (issueHash[entry.ID] != 1) {
-        issueHash[entry.ID] = 1;
-        newArray[cidx] = entry;
-        cidx++;
-      }
-    }
+  // 配列から同じIDの項目を削除（古いエントリを削除）
+  issueArray = issueArray.filter(issue => issue.ID !== currentIssue);
+
+  // 新しい履歴を先頭に追加
+  issueArray.unshift(newEntry);
+
+  // 最大件数を超えたら切り捨て
+  if (issueArray.length > maxIssues) {
+    issueArray = issueArray.slice(0, maxIssues);
   }
-  issueArray = newArray;
 
-  var thisEntry = {
-    ID: currentIssue,
-    Str: issueTitle + ": " + issueSubject
-  };
-  issueArray[0] = thisEntry;
-
+  // ローカルストレージに保存
   localStorage.setItem("recentIssues", JSON.stringify(issueArray));
 }
 
 function showRecentHistory() {
-  if ($("#sidebar").length > 0) {
-    var issueArray = JSON.parse(localStorage.getItem("recentIssues")) || [];
+  if (!$("#sidebar").length) return;
 
-    $("<div id='recentList'>").prependTo("#sidebar-wrapper");
-    var recentList = $("<h3>最近見たチケット</h3>").appendTo("#recentList");
+  const results = location.href.match(issueMatcher);
+  const currentIssue = results ? results[1] : null; // 現在のチケットIDを取得
 
-    var issuesShown = 0;
-    for (var i = 0; i < Object.size(issueArray); i++) {
-      if (issueArray[i]["ID"] != currentIssue) {
-        issuesShown++;
-        var disp = issueArray[i]["Str"];
-        if (disp.length > maxIssuesTitle) { disp = disp.substring(0, maxIssuesTitle) + "..." }
-        var a = "<a href=/issues/" + issueArray[i]["ID"] + ">" + disp + "</a></br>";
-        $("#recentList").append(a);
-      }
-    }
+  const issueArray = JSON.parse(localStorage.getItem("recentIssues")) || [];
 
-    if (issuesShown < 1) {
-      $("#recentList").hide();
-    }
+  // 履歴が存在しない場合は非表示
+  if (issueArray.length === 0) {
+    $("#recentList").hide();
+    return;
+  }
+
+  // サイドバーに履歴を表示
+  const recentList = $("<div id='recentList'><h3>最近見たチケット</h3></div>");
+  $("#sidebar-wrapper").prepend(recentList);
+
+  let issuesShown = 0;
+
+  issueArray.forEach(issue => {
+    if (issue.ID === currentIssue) return; // 現在のチケットを除外
+
+    const truncatedTitle = issue.Str.length > maxIssuesTitle
+      ? `${issue.Str.substring(0, maxIssuesTitle)}...`
+      : issue.Str;
+
+    recentList.append(`<a href="/issues/${issue.ID}">${truncatedTitle}</a><br>`);
+    issuesShown++;
+  });
+
+  // 履歴が非表示になる場合を処理
+  if (issuesShown === 0) {
+    $("#recentList").hide();
   }
 }
 
-$(document).ready(function() {
+$(document).ready(() => {
   trackRecentHistory();
   showRecentHistory();
 });
