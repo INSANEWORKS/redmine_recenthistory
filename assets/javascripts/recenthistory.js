@@ -7,6 +7,25 @@ const issueMatcher = /\/issues\/(\d+)/;
 const maxIssues = 20;
 const maxIssuesTitle = 35;
 
+// Multi-language messages
+const messages = {
+  en: {
+    recentIssues: "Recently Viewed Issues",
+  },
+  ja: {
+    recentIssues: "最近見たチケット",
+  },
+  fr: {
+    recentIssues: "Problèmes récemment consultés",
+  },
+  // Add more languages as needed
+};
+
+// Get the browser's language
+const userLang = navigator.language || navigator.userLanguage; // e.g., 'en-US', 'ja'
+const lang = userLang.split('-')[0];
+const message = messages[lang] || messages['en']; // Default to English if unsupported
+
 function trackRecentHistory() {
   const results = location.href.match(issueMatcher);
   if (!results || results.length < 2) return;
@@ -15,24 +34,24 @@ function trackRecentHistory() {
   const issueTitle = $("#content h2:first").text().replace(/.*(#\d+)/, "$1");
   const issueSubject = $("#content div.subject h3").text();
 
-  // 現在の履歴を取得
+  // Retrieve current history
   let issueArray = JSON.parse(localStorage.getItem("recentIssues")) || [];
 
-  // 新しい履歴項目を作成
+  // Create a new history entry
   const newEntry = { ID: currentIssue, Str: `${issueTitle}: ${issueSubject}` };
 
-  // 配列から同じIDの項目を削除（古いエントリを削除）
+  // Remove duplicate entries with the same ID
   issueArray = issueArray.filter(issue => issue.ID !== currentIssue);
 
-  // 新しい履歴を先頭に追加
+  // Add the new history entry at the beginning
   issueArray.unshift(newEntry);
 
-  // 最大件数を超えたら切り捨て
+  // Truncate the array if it exceeds the maximum allowed entries
   if (issueArray.length > maxIssues) {
     issueArray = issueArray.slice(0, maxIssues);
   }
 
-  // ローカルストレージに保存
+  // Save to localStorage
   localStorage.setItem("recentIssues", JSON.stringify(issueArray));
 }
 
@@ -40,24 +59,21 @@ function showRecentHistory() {
   if (!$("#sidebar").length) return;
 
   const results = location.href.match(issueMatcher);
-  const currentIssue = results ? results[1] : null; // 現在のチケットIDを取得
+  const currentIssue = results ? results[1] : null; // Get the current ticket ID
 
   const issueArray = JSON.parse(localStorage.getItem("recentIssues")) || [];
 
-  // 履歴が存在しない場合は非表示
-  if (issueArray.length === 0) {
-    $("#recentList").hide();
-    return;
-  }
+  // Do not display anything if no history exists
+  if (issueArray.length === 0) return;
 
-  // サイドバーに履歴を表示
-  const recentList = $("<div id='recentList'><h3>最近見たチケット</h3></div>");
+  // Create the recent list in the sidebar
+  const recentList = $("<div id='recentList'><h3>" + message.recentIssues + "</h3></div>");
   $("#sidebar-wrapper").prepend(recentList);
 
   let issuesShown = 0;
 
   issueArray.forEach(issue => {
-    if (issue.ID === currentIssue) return; // 現在のチケットを除外
+    if (issue.ID === currentIssue) return; // Skip the current ticket
 
     const truncatedTitle = issue.Str.length > maxIssuesTitle
       ? `${issue.Str.substring(0, maxIssuesTitle)}...`
@@ -67,9 +83,9 @@ function showRecentHistory() {
     issuesShown++;
   });
 
-  // 履歴が非表示になる場合を処理
+  // Hide the recent list if no issues are displayed
   if (issuesShown === 0) {
-    $("#recentList").hide();
+    $("#recentList").remove();
   }
 }
 
